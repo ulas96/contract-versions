@@ -26,26 +26,38 @@ contract RPS {
         uint timestamp;
     }
 
+    PendingGame[] public pendingGames;
+
+    Game[] public games;
+
     mapping(uint256 => uint256) private firstMoves;
-
-    mapping(uint256 => PendingGame) public pendingGames;
-
-    mapping(uint256 => Game) public games;
 
     mapping(address => uint256) public claimableRewards;
 
     mapping(address => uint256) public claimedRewards;
 
-    function getBallance() public view returns (uint256) {
-        return address(this).balance;
-    }
+    function addGameRecord(
+        address opt1,
+        uint256 move1,
+        address opt2,
+        uint256 move2,
+        uint256 _amount,
+        address winner,
+        uint _timestamp
+    ) private {
+        totalGameCount++;
+        games.push(Game(
+        totalGameCount,
+        opt1,
+        move1,
+        opt2,
+        move2,
+        _amount,
+        winner,
+        _timestamp
+        ));
+        games[totalGameCount] = game;
 
-    function getTotoalGameCount() public view returns (uint256) {
-        return totalGameCount;
-    }
-
-    function getTotalPendingGameCount() public view returns (uint256) {
-        return totalPendingGameCount;
     }
 
     function addGame(
@@ -71,101 +83,21 @@ contract RPS {
         games[totalGameCount] = game;
     }
 
-    function addPendingGame(uint256 _move, address sender, uint _timestamp) private {
+    function addPendingGame(
+        uint256 _firstMove,
+        address _gameCreator,
+        uint _timestamp
+    ) private {
         totalPendingGameCount++;
         PendingGame memory pendingGame = PendingGame(
             totalPendingGameCount,
-            sender,
+            _gameCreator,
             amount,
             true,
             _timestamp
         );
         pendingGames[totalPendingGameCount] = pendingGame;
-        firstMoves[totalPendingGameCount] = _move;
-    }
-
-    function getGame(uint256 id) public view returns (Game memory game) {
-        game = games[id];
-    }
-
-    function getPendingGame(uint256 id)
-    public
-    view
-    returns (PendingGame memory pendingGame)
-    {
-        pendingGame = pendingGames[id];
-    }
-
-    function getActivePendingGames()
-    public
-    view
-    returns (PendingGame[] memory activePendingGames)
-    {
-        uint256 activePendingGameCount = 0;
-
-        for (uint256 i = 0; i <= totalPendingGameCount; i++) {
-            if (pendingGames[i].active == true) {
-                activePendingGameCount++;
-            }
-        }
-
-        activePendingGames = new PendingGame[](activePendingGameCount);
-        activePendingGameCount = 0;
-
-        for (uint256 i = 0; i <= totalPendingGameCount; i++) {
-            if (pendingGames[i].active == true) {
-                activePendingGames[activePendingGameCount] = pendingGames[i];
-                activePendingGameCount++;
-            }
-        }
-    }
-
-    function getPlayerGames(address adr)
-    public
-    view
-    returns (Game[] memory Games)
-    {
-        uint256 gameCount = 0;
-
-        for (uint256 i = 0; i <= totalGameCount; i++) {
-            if (games[i].opponent1 == adr || games[i].opponent2 == adr) {
-                gameCount++;
-            }
-        }
-
-        Games = new Game[](gameCount);
-        gameCount = 0;
-
-        for (uint256 i = 0; i <= totalGameCount; i++) {
-            if (games[i].opponent1 == adr || games[i].opponent2 == adr) {
-                Games[gameCount] = games[i];
-                gameCount++;
-            }
-        }
-    }
-
-    function getPlayerPendingGames(address adr)
-    public
-    view
-    returns (PendingGame[] memory PendingGames)
-    {
-        uint256 pendingGameCount = 0;
-
-        for (uint256 i = 0; i <= totalPendingGameCount; i++) {
-            if (pendingGames[i].active == true && pendingGames[i].gameCreator == adr) {
-                pendingGameCount++;
-            }
-        }
-
-        PendingGames = new PendingGame[](pendingGameCount);
-        pendingGameCount = 0;
-
-        for (uint256 i = 0; i <= totalPendingGameCount; i++) {
-            if (pendingGames[i].active == true && pendingGames[i].gameCreator == adr) {
-                PendingGames[pendingGameCount] = pendingGames[i];
-                pendingGameCount++;
-            }
-        }
+        firstMoves[totalPendingGameCount] = _firstMove;
     }
 
     function getClaimableRewards(address adr)
