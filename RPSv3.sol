@@ -36,6 +36,14 @@ contract RPS {
 
     mapping(address => uint256) public claimedRewards;
 
+    function getGames() public view returns (Game[] memory _games) {
+        _games = games;
+    }
+
+    function getPendingGames() public view returns (PendingGame[] memory _pendingGames) {
+        _pendingGames = pendingGames;
+    }
+
     function addGameRecord(
         address opt1,
         uint256 move1,
