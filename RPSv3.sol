@@ -44,30 +44,6 @@ contract RPS {
         _pendingGames = pendingGames;
     }
 
-    function addGameRecord(
-        address opt1,
-        uint256 move1,
-        address opt2,
-        uint256 move2,
-        uint256 _amount,
-        address winner,
-        uint _timestamp
-    ) private {
-        totalGameCount++;
-        games.push(Game(
-        totalGameCount,
-        opt1,
-        move1,
-        opt2,
-        move2,
-        _amount,
-        winner,
-        _timestamp
-        ));
-        games[totalGameCount] = game;
-
-    }
-
     function addGame(
         address opt1,
         uint256 move1,
@@ -77,9 +53,9 @@ contract RPS {
         address winner,
         uint _timestamp
     ) private {
-        totalGameCount++;
-        Game memory game = Game(
-            totalGameCount,
+        uint id = games.length + 1;
+        games.push(Game(
+            id,
             opt1,
             move1,
             opt2,
@@ -87,24 +63,25 @@ contract RPS {
             _amount,
             winner,
             _timestamp
-        );
-        games[totalGameCount] = game;
+        ));
+
     }
+
+
 
     function addPendingGame(
         uint256 _firstMove,
         address _gameCreator,
         uint _timestamp
     ) private {
-        totalPendingGameCount++;
-        PendingGame memory pendingGame = PendingGame(
-            totalPendingGameCount,
+        uint id = pendingGames.length + 1;
+        pendingGames.push(PendingGame(
+            id,
             _gameCreator,
             amount,
             true,
             _timestamp
-        );
-        pendingGames[totalPendingGameCount] = pendingGame;
+        ));
         firstMoves[totalPendingGameCount] = _firstMove;
     }
 
@@ -126,10 +103,10 @@ contract RPS {
 
 
     //0: rock, 1: paper, 2: scissor
-    function gameResult(uint256 move1, uint256 move2)
+    function gameResult(uint move1, uint move2)
     private
     pure
-    returns (uint256 winner)
+    returns (uint winner)
     {
         if (move1 == 0 && move2 == 0) {
             winner = 0;
