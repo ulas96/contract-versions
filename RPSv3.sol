@@ -4,8 +4,7 @@ pragma solidity 0.8.18;
 contract RPS {
     uint256 public amount;
     address public owner;
-    uint256 public totalGameCount;
-    uint256 public totalPendingGameCount;
+
 
     struct Game {
         uint256 id;
@@ -82,7 +81,7 @@ contract RPS {
             true,
             _timestamp
         ));
-        firstMoves[totalPendingGameCount] = _firstMove;
+        firstMoves[id] = _firstMove;
     }
 
     function getClaimableRewards(address adr)
@@ -137,30 +136,32 @@ contract RPS {
     }
 
     function joinGame(uint256 id, uint256 _secondMove) external payable {
+        uint256 arrayPosition = id - 1;
         require(msg.value >= amount);
         require(_secondMove == 0 || _secondMove == 2 || _secondMove == 1);
-        require(pendingGames[id].active == true);
+        require(pendingGames[arrayPosition].active == true);
         uint256 result = gameResult(
-            firstMoves[pendingGames[id].id],
+            firstMoves[pendingGames[arrayPosition].id],
             _secondMove
         );
-        pendingGames[id].active = false;
+        pendingGames[arrayPosition].active = false;
         address winner;
+
         if (result == 0) {
-            claimableRewards[pendingGames[id].gameCreator] += amount;
+            claimableRewards[pendingGames[arrayPosition].gameCreator] += amount;
             claimableRewards[msg.sender] += amount;
             winner = address(0);
         } else if (result == 1) {
-            claimableRewards[pendingGames[id].gameCreator] +=
+            claimableRewards[pendingGames[arrayPosition].gameCreator] +=
                 (amount * 19) /
                 10;
-            winner = pendingGames[id].gameCreator;
+            winner = pendingGames[arrayPosition].gameCreator;
         } else if (result == 2) {
             claimableRewards[msg.sender] += (amount * 19) / 10;
             winner = msg.sender;
         }
         addGame(
-            pendingGames[id].gameCreator,
+            pendingGames[arrayPosition].gameCreator,
             firstMoves[id],
             msg.sender,
             _secondMove,
@@ -193,7 +194,6 @@ contract RPS {
     constructor(uint256 _amount) payable {
         amount = _amount;
         owner = msg.sender;
-        totalGameCount = 0;
-        totalPendingGameCount = 0;
+
     }
 }
