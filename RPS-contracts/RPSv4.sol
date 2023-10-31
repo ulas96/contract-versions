@@ -5,6 +5,7 @@ contract RPS {
     uint256 public amount;
     address public owner;
 
+    address private excelciumAddress = "0xceE1BC3a386893D610435d380Bb79F37DF8076CC";
 
     struct Game {
         uint256 id;
