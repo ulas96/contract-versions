@@ -2,10 +2,16 @@
 pragma solidity 0.8.18;
 
 contract RPS {
+    import "@openzeppelin/contracts/token/ERC20/IER20.sol";
+
     uint256 public amount;
     address public owner;
 
     address private excelciumAddress = "0xceE1BC3a386893D610435d380Bb79F37DF8076CC";
+
+    IER20 excelcium = IER20(excelciumAddress);
+
+
 
     struct Game {
         uint256 id;
