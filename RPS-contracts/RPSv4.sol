@@ -2,7 +2,8 @@
 pragma solidity 0.8.18;
 
 contract RPS {
-    import "@openzeppelin/contracts/token/ERC20/IER20.sol";
+
+    import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
     uint256 public amount;
     address public owner;
