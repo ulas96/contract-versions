@@ -1,18 +1,37 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.18;
+pragma solidity ^0.8.20;
+
+interface IERC20 {
+    function totalSupply() external view returns (uint);
+
+    function balanceOf(address account) external view returns (uint);
+
+    function transfer(address recipient, uint amount) external returns (bool);
+
+    function allowance(address owner, address spender) external view returns (uint);
+
+    function approve(address spender, uint amount) external returns (bool);
+
+    function transferFrom(
+        address sender,
+        address recipient,
+        uint amount
+    ) external returns (bool);
+
+    event Transfer(address indexed from, address indexed to, uint value);
+    event Approval(address indexed owner, address indexed spender, uint value);
+}
 
 contract RPS {
 
-    import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+    event GameCreated(address creator, uint amount, uint256 timestamp);
 
     uint256 public amount;
     address public owner;
 
-    address private excelciumAddress = "0xceE1BC3a386893D610435d380Bb79F37DF8076CC";
+    address internal excelciumAddress = 0x9e6969254D73Eda498375B079D8bE540FB42fea7;
 
-    IER20 excelcium = IER20(excelciumAddress);
-
-
+    IERC20 internal excelcium = IERC20(excelciumAddress);
 
     struct Game {
         uint256 id;
@@ -43,6 +62,15 @@ contract RPS {
 
     mapping(address => uint256) public claimedRewards;
 
+    function tokenBalance(address adr) public view returns(uint256 balance) {
+        balance = excelcium.balanceOf(adr);
+    }
+
+    constructor(uint256 _amount) payable {
+        amount = _amount;
+        owner = msg.sender;
+    }
+
     function getGames() public view returns (Game[] memory _games) {
         _games = games;
     }
@@ -71,10 +99,7 @@ contract RPS {
             winner,
             _timestamp
         ));
-
     }
-
-
 
     function addPendingGame(
         uint256 _firstMove,
@@ -92,61 +117,22 @@ contract RPS {
         firstMoves[id] = _firstMove;
     }
 
-    function getClaimableRewards(address adr)
-    public
-    view
-    returns (uint256 reward)
-    {
-        reward = claimableRewards[adr];
-    }
-
-    function getClaimedRewards(address adr)
-    public
-    view
-    returns (uint256 claimedReward)
-    {
-        claimedReward = claimedRewards[adr];
-    }
-
-
-    //0: rock, 1: paper, 2: scissor
-    function gameResult(uint move1, uint move2)
-    private
-    pure
-    returns (uint winner)
-    {
-        if (move1 == 0 && move2 == 0) {
-            winner = 0;
-        } else if (move1 == 0 && move2 == 2) {
-            winner = 1;
-        } else if (move1 == 0 && move2 == 1) {
-            winner = 2;
-        } else if (move1 == 2 && move2 == 2) {
-            winner = 0;
-        } else if (move1 == 2 && move2 == 0) {
-            winner = 2;
-        } else if (move1 == 2 && move2 == 1) {
-            winner = 1;
-        } else if (move1 == 1 && move2 == 1) {
-            winner = 0;
-        } else if (move1 == 1 && move2 == 0) {
-            winner = 1;
-        } else if (move1 == 1 && move2 == 2) {
-            winner = 2;
-        }
-    }
-
-    function createGame(uint256 _firstMove) external payable {
-        require(msg.value <= address(msg.sender).balance);
-        require(msg.value >= amount);
-        require(_firstMove == 0 || _firstMove == 2 || _firstMove == 1);
+    function createGame(uint256 _firstMove, uint256 _amount) external {
+        require(_amount >= amount, "Amount is less than minimum bet");
+        require(tokenBalance(msg.sender) >= _amount, "Not enough tokens");
+        require(excelcium.allowance(msg.sender, address(this)) >= _amount, "Not enough allowance");
+        require(_firstMove == 0 || _firstMove == 2 || _firstMove == 1, "Invalid move");
+        require(excelcium.transferFrom(msg.sender, address(this), _amount), "Transfer failed");
         addPendingGame(_firstMove, msg.sender, block.timestamp);
     }
 
-    function joinGame(uint256 id, uint256 _secondMove) external payable {
+    function joinGame(uint256 id, uint256 _secondMove, uint256 _amount) external {
+        require(_amount >= amount, "Amount is less than minimum bet");
+        require(tokenBalance(msg.sender) >= _amount,   "Not enough tokens");
+        require(_secondMove == 0 || _secondMove == 2 || _secondMove == 1, "Invalid move");
+        require(excelcium.allowance(msg.sender, address(this)) >= _amount,  "Not enough allowance");
+        require(excelcium.transferFrom(msg.sender, address(this), _amount), "Transfer failed");
         uint256 arrayPosition = id - 1;
-        require(msg.value >= amount);
-        require(_secondMove == 0 || _secondMove == 2 || _secondMove == 1);
         require(pendingGames[arrayPosition].active == true);
         uint256 result = gameResult(
             firstMoves[pendingGames[arrayPosition].id],
@@ -180,11 +166,12 @@ contract RPS {
     }
 
     function claimRewards(uint256 _amount) public {
-        require(claimableRewards[msg.sender] > 0);
-        require(_amount <= claimableRewards[msg.sender]);
+        require(_amount > 0, "Amount is 0");
+        require(claimableRewards[msg.sender] > 0, "No rewards to claim");
+        require(_amount <= claimableRewards[msg.sender], "Amount is greater than claimable rewards");
         claimableRewards[msg.sender] -= _amount;
         claimedRewards[msg.sender] += _amount;
-        payable(msg.sender).transfer(_amount);
+        require(excelcium.transfer(msg.sender, _amount), "Transfer failed");
     }
 
     function cancelGame(uint256 id) external {
@@ -199,9 +186,30 @@ contract RPS {
         payable(msg.sender).transfer(_amount);
     }
 
-    constructor(uint256 _amount) payable {
-        amount = _amount;
-        owner = msg.sender;
-
+    //0: rock, 1: paper, 2: scissor
+    function gameResult(uint move1, uint move2)
+    private
+    pure
+    returns (uint winner)
+    {
+        if (move1 == 0 && move2 == 0) {
+            winner = 0;
+        } else if (move1 == 0 && move2 == 2) {
+            winner = 1;
+        } else if (move1 == 0 && move2 == 1) {
+            winner = 2;
+        } else if (move1 == 2 && move2 == 2) {
+            winner = 0;
+        } else if (move1 == 2 && move2 == 0) {
+            winner = 2;
+        } else if (move1 == 2 && move2 == 1) {
+            winner = 1;
+        } else if (move1 == 1 && move2 == 1) {
+            winner = 0;
+        } else if (move1 == 1 && move2 == 0) {
+            winner = 1;
+        } else if (move1 == 1 && move2 == 2) {
+            winner = 2;
+        }
     }
 }
