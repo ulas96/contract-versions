@@ -3,7 +3,9 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.9;
 
-import "./Uruk.sol";
+interface Uruk {
+    function isMember(address _address) external view returns(bool);
+}
 
 
 contract Campaigns {
