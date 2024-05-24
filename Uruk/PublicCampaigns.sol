@@ -15,6 +15,7 @@ contract PublicCampaigns {
     struct Participant {
         address participantAddress;
         string[] answers;
+        uint256 votes;
         bool isRewarded;
     }
 
@@ -23,22 +24,27 @@ contract PublicCampaigns {
         uint256 donationAmount;
     }
 
+    struct Vote {
+        address voterAddress;
+        uint256 vote;
+    }
+
     struct PublicCampaign {
-        uint256 id;ß
+        uint256 id;
         uint256 donation;
         uint256 articleId;
         string[] questions;
         Participant[] participants;
         Donation[] donations;
+        Vote[] votes;
         uint256 maxReward;
         uint256 remainingReward;
     }
 
     PublicCampaign[] public publicCampaigns;
 
-    function createCampaign(uint256 _donation, uint256 _articleId, string[] memory _questions, uint256 _maxReward) public payable {
+    function createCampaign(uint256 _donation, uint256 _articleId, string[] memory _questions, uint256 _maxReward) public  {
         require(uruk.isMember(msg.sender));
-        require(_donation >= msg.value );
         uint256 campaignId = publicCampaigns.length + 1;
         PublicCampaign storage newCampaign = publicCampaigns.push();
         newCampaign.id = campaignId;
@@ -54,9 +60,11 @@ contract PublicCampaigns {
         require(publicCampaigns.length >= _campaignId, "Campaign doesn't exist");
         require(_answers.length == publicCampaigns[_campaignId - 1].questions.length);
         PublicCampaign storage currentCampaign = publicCampaigns[_campaignId - 1];
-        Participant memory currentParticipant = Participant(msg.sender, _answers, false);
+        Participant memory currentParticipant = Participant(msg.sender, _answers,0 , false);
         currentCampaign.participants.push(currentParticipant);
     }
+
+    
 
     function rewardParticipant(uint256 _campaignId, uint256 _participantId) public {
         require(uruk.isMember(msg.sender));
