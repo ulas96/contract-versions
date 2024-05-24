@@ -37,7 +37,6 @@ contract Uruk {
 
 
     mapping(address => Member) public members;
-    
     address[] public memberAddresses;
     Article[] public articles;
 
@@ -99,8 +98,6 @@ contract Uruk {
         });
         _article.comments.push(currentComment);
     }
-
-
 
 
     function getArticle(uint256 _articleId) public view returns(Article memory _article) {
