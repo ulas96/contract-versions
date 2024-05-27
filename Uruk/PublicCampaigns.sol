@@ -6,11 +6,12 @@ pragma solidity ^0.8.9;
 
 interface Uruk {
     function isMember(address _address) external view returns(bool); 
+    function getArticleCount() external view returns(uint256);
 }
 
 contract PublicCampaigns {
 
-    Uruk uruk = Uruk(0x9C4577b3a6E179CbffDD7C6F08d7c0E4478928d8);
+    Uruk uruk = Uruk(0x4038Ae2072E9b1653EA42B09a7817e8C61f0C995);
     
     struct Participant {
         address participantAddress;
@@ -31,28 +32,43 @@ contract PublicCampaigns {
 
     struct PublicCampaign {
         uint256 id;
-        uint256 donation;
+        uint256 donationDeadline;
+        uint256 votingDeadline;
         uint256 articleId;
         string[] questions;
         Participant[] participants;
         Donation[] donations;
         Vote[] votes;
+        uint256 donation;
         uint256 maxReward;
         uint256 remainingReward;
     }
 
     PublicCampaign[] public publicCampaigns;
 
-    function createCampaign(uint256 _donation, uint256 _articleId, string[] memory _questions, uint256 _maxReward) public  {
+    function createCampaign(uint256 _donationDeadline, uint256 _votingDeadline, uint256 _articleId, string[] memory _questions, uint256 _maxReward) public  {
         require(uruk.isMember(msg.sender));
-        uint256 campaignId = publicCampaigns.length + 1;
+        require(_donationDeadline > block.timestamp);
+        require(_votingDeadline > _donationDeadline);
+        require(uruk.getArticleCount() >= _articleId);
         PublicCampaign storage newCampaign = publicCampaigns.push();
-        newCampaign.id = campaignId;
-        newCampaign.donation = _donation;
+        newCampaign.id = publicCampaigns.length;
+        newCampaign.donationDeadline = _donationDeadline;
+        newCampaign.votingDeadline = _votingDeadline;
         newCampaign.articleId = _articleId;
         newCampaign.questions = _questions;
         newCampaign.maxReward = _maxReward;
-        newCampaign.remainingReward = _donation;
+        newCampaign.remainingReward = 0;
+    }
+
+    function donateCampaign(uint256 _campaignId) external payable {
+        require(msg.value > 0);
+        require(uruk.isMember(msg.sender));
+        require(publicCampaigns.length >= _campaignId);
+        require(publicCampaigns[_campaignId].donationDeadline > block.timestamp);
+        publicCampaigns[_campaignId].donations.push(Donation(msg.sender, msg.value));
+        publicCampaigns[_campaignId].donation += msg.value;
+        publicCampaigns[_campaignId].remainingReward += msg.value;
     }
     
     function participateCampaign(uint256 _campaignId, string[] memory _answers) public {
