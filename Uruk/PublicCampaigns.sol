@@ -39,6 +39,7 @@ contract PublicCampaigns {
         Participant[] participants;
         Donation[] donations;
         Vote[] votes;
+        address[] winners;
         uint256 donation;
         uint256 maxReward;
         uint256 remainingReward;
@@ -81,14 +82,8 @@ contract PublicCampaigns {
     }
 
     
+    function decideWinners() {
 
-    function rewardParticipant(uint256 _campaignId, uint256 _participantId) public {
-        require(uruk.isMember(msg.sender));
-        require(publicCampaigns[_campaignId-1].remainingReward > 0);
-        require(publicCampaigns[_campaignId-1].participants.length >= _participantId, "Participant doesn't exist");
-        require(publicCampaigns[_campaignId-1].participants[_participantId-1].isRewarded == false, "Participant already rewarded");
-        publicCampaigns[_campaignId-1].participants[_participantId-1].isRewarded == true;
-        publicCampaigns[_campaignId-1].remainingReward -= publicCampaigns[_campaignId-1].maxReward;
     }
 
     function claimReward(uint256 _campaignId) public {
